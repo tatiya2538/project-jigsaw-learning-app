@@ -1,0 +1,1 @@
+export { characterData } from "./kondanna";
