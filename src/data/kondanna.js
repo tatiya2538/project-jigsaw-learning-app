@@ -101,8 +101,8 @@ export const characterData = {
   audio: {
     title: "เรื่องราวของพระอัญญาโกณฑัญญะ",
     subtitle: "เสียงบรรยายสำหรับกิจกรรมการเรียนรู้",
-    duration: "02:10",
-    durationSeconds: 130,
+    duration: "00:44",
+    durationSeconds: 44,
   },
   quiz: [
     {

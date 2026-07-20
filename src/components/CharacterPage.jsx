@@ -8,7 +8,7 @@ import QuizCard from "./QuizCard";
 import Timeline from "./Timeline";
 import VirtueCard from "./VirtueCard";
 
-export default function CharacterPage({ characterData, imageSrc }) {
+export default function CharacterPage({ characterData, imageSrc, audioSrc }) {
   return (
     <main className="min-h-screen">
       <Hero
@@ -24,6 +24,7 @@ export default function CharacterPage({ characterData, imageSrc }) {
         duration={characterData.audio.duration}
         imageSrc={imageSrc}
         name={characterData.name}
+        audioSrc={audioSrc}
       />
 
       <BiographyCard

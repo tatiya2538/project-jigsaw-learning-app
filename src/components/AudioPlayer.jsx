@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 function PlayIcon() {
   return (
@@ -55,19 +55,124 @@ function DownloadIcon() {
   );
 }
 
+function formatTime(seconds) {
+  if (!Number.isFinite(seconds) || seconds < 0) {
+    return "00:00";
+  }
+
+  const total = Math.floor(seconds);
+  const mins = Math.floor(total / 60);
+  const secs = total % 60;
+
+  return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+}
+
+const speedOptions = [
+  { label: "0.75x", value: 0.75 },
+  { label: "1x", value: 1 },
+  { label: "1.25x", value: 1.25 },
+  { label: "1.5x", value: 1.5 },
+];
+
 export default function AudioPlayer({
   title,
   subtitle,
   duration,
   imageSrc,
   name,
+  audioSrc,
 }) {
+  const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [progress] = useState(35);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [totalTime, setTotalTime] = useState(0);
   const [volume, setVolume] = useState(80);
-  const [speed, setSpeed] = useState("1x");
+  const [speed, setSpeed] = useState(1);
+  const [isReady, setIsReady] = useState(false);
 
-  const speeds = ["0.75x", "1x", "1.25x", "1.5x"];
+  const hasAudio = Boolean(audioSrc);
+  const progress =
+    totalTime > 0 ? Math.min((currentTime / totalTime) * 100, 100) : 0;
+  const displayDuration =
+    totalTime > 0 ? formatTime(totalTime) : duration || "00:00";
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !hasAudio) return undefined;
+
+    const handleLoadedMetadata = () => {
+      setTotalTime(audio.duration || 0);
+      setIsReady(true);
+    };
+
+    const handleTimeUpdate = () => {
+      setCurrentTime(audio.currentTime || 0);
+    };
+
+    const handleEnded = () => {
+      setIsPlaying(false);
+      setCurrentTime(0);
+      audio.currentTime = 0;
+    };
+
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+
+    audio.addEventListener("loadedmetadata", handleLoadedMetadata);
+    audio.addEventListener("timeupdate", handleTimeUpdate);
+    audio.addEventListener("ended", handleEnded);
+    audio.addEventListener("play", handlePlay);
+    audio.addEventListener("pause", handlePause);
+
+    audio.load();
+
+    return () => {
+      audio.pause();
+      audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      audio.removeEventListener("timeupdate", handleTimeUpdate);
+      audio.removeEventListener("ended", handleEnded);
+      audio.removeEventListener("play", handlePlay);
+      audio.removeEventListener("pause", handlePause);
+    };
+  }, [audioSrc, hasAudio]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.volume = volume / 100;
+  }, [volume]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.playbackRate = speed;
+  }, [speed]);
+
+  async function handleTogglePlay() {
+    const audio = audioRef.current;
+    if (!audio || !hasAudio) return;
+
+    if (audio.paused) {
+      try {
+        await audio.play();
+      } catch {
+        setIsPlaying(false);
+      }
+      return;
+    }
+
+    audio.pause();
+  }
+
+  function handleSeek(event) {
+    const audio = audioRef.current;
+    if (!audio || !totalTime) return;
+
+    const nextProgress = Number(event.target.value);
+    const nextTime = (nextProgress / 100) * totalTime;
+    audio.currentTime = nextTime;
+    setCurrentTime(nextTime);
+  }
 
   return (
     <section className="px-4 py-10 sm:px-6 sm:py-14">
@@ -83,6 +188,10 @@ export default function AudioPlayer({
         </div>
 
         <div className="rounded-3xl bg-white p-5 shadow-card sm:p-7 animate-fade-in-up">
+          {hasAudio ? (
+            <audio ref={audioRef} src={audioSrc} preload="metadata" />
+          ) : null}
+
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
             <div className="relative mx-auto h-28 w-28 shrink-0 overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-amber-300 to-secondary shadow-soft sm:mx-0 sm:h-32 sm:w-32">
               <Image
@@ -100,47 +209,63 @@ export default function AudioPlayer({
               </h3>
               <p className="mt-1 text-sm text-text/65">{subtitle}</p>
               <p className="mt-2 inline-flex rounded-full bg-secondary/60 px-3 py-1 text-sm font-medium text-amber-800">
-                ระยะเวลา {duration}
+                ระยะเวลา {displayDuration}
               </p>
+              {!hasAudio ? (
+                <p className="mt-2 text-sm text-orange-600">
+                  ยังไม่มีไฟล์เสียงสำหรับตัวละครนี้
+                </p>
+              ) : null}
             </div>
           </div>
 
           <div className="mt-6">
-            <div className="relative h-2.5 overflow-hidden rounded-full bg-secondary/50">
-              <div
-                className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-primary to-amber-400 transition-all"
-                style={{ width: `${progress}%` }}
-              />
-              <div
-                className="absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full border-2 border-white bg-primary shadow-soft"
-                style={{ left: `calc(${progress}% - 8px)` }}
+            <div className="relative">
+              <div className="h-2.5 overflow-hidden rounded-full bg-secondary/50">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-primary to-amber-400 transition-all"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="0.1"
+                value={progress}
+                disabled={!hasAudio || !isReady}
+                onChange={handleSeek}
+                className="absolute inset-0 h-2.5 w-full cursor-pointer appearance-none bg-transparent accent-primary disabled:cursor-not-allowed"
+                aria-label="ความคืบหน้าเสียง"
               />
             </div>
             <div className="mt-2 flex justify-between text-xs font-medium text-text/55 sm:text-sm">
-              <span>00:45</span>
-              <span>{duration}</span>
+              <span>{formatTime(currentTime)}</span>
+              <span>{displayDuration}</span>
             </div>
           </div>
 
           <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
             <button
               type="button"
-              onClick={() => setIsPlaying((prev) => !prev)}
-              className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-amber-500 text-white shadow-soft transition duration-300 hover:scale-105 active:scale-95"
+              onClick={handleTogglePlay}
+              disabled={!hasAudio}
+              className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-amber-500 text-white shadow-soft transition duration-300 hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
               aria-label={isPlaying ? "หยุดชั่วคราว" : "เล่น"}
             >
               {isPlaying ? <PauseIcon /> : <PlayIcon />}
             </button>
 
-            <div className="flex flex-1 items-center gap-2 min-w-[140px]">
+            <div className="flex min-w-[140px] flex-1 items-center gap-2">
               <VolumeIcon />
               <input
                 type="range"
                 min="0"
                 max="100"
                 value={volume}
+                disabled={!hasAudio}
                 onChange={(e) => setVolume(Number(e.target.value))}
-                className="h-2 w-full cursor-pointer appearance-none rounded-full bg-secondary accent-primary"
+                className="h-2 w-full cursor-pointer appearance-none rounded-full bg-secondary accent-primary disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label="ระดับเสียง"
               />
               <span className="w-10 text-right text-xs text-text/60">
@@ -158,26 +283,38 @@ export default function AudioPlayer({
               <select
                 id="speed"
                 value={speed}
-                onChange={(e) => setSpeed(e.target.value)}
-                className="rounded-xl border border-secondary bg-background px-3 py-2 text-sm font-medium text-text outline-none transition focus:ring-2 focus:ring-primary/40"
+                disabled={!hasAudio}
+                onChange={(e) => setSpeed(Number(e.target.value))}
+                className="rounded-xl border border-secondary bg-background px-3 py-2 text-sm font-medium text-text outline-none transition focus:ring-2 focus:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {speeds.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
+                {speedOptions.map((item) => (
+                  <option key={item.label} value={item.value}>
+                    {item.label}
                   </option>
                 ))}
               </select>
             </div>
 
-            <button
-              type="button"
-              disabled
-              className="inline-flex items-center gap-2 rounded-2xl bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-400 cursor-not-allowed"
-              title="ยังไม่พร้อมใช้งาน"
-            >
-              <DownloadIcon />
-              ดาวน์โหลด
-            </button>
+            {hasAudio ? (
+              <a
+                href={audioSrc}
+                download
+                className="inline-flex items-center gap-2 rounded-2xl bg-secondary/70 px-4 py-2.5 text-sm font-medium text-amber-900 transition hover:bg-secondary"
+              >
+                <DownloadIcon />
+                ดาวน์โหลด
+              </a>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="inline-flex cursor-not-allowed items-center gap-2 rounded-2xl bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-400"
+                title="ยังไม่มีไฟล์เสียง"
+              >
+                <DownloadIcon />
+                ดาวน์โหลด
+              </button>
+            )}
           </div>
         </div>
       </div>

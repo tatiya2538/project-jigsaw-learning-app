@@ -36,6 +36,7 @@ export default async function CharacterRoutePage({ params }) {
     <CharacterPage
       characterData={character.data}
       imageSrc={character.image}
+      audioSrc={character.audio}
     />
   );
 }
