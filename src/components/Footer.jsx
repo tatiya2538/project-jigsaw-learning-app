@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Footer() {
   return (
     <footer className="mt-4 border-t border-secondary/60 bg-white/70 px-4 py-10 text-center backdrop-blur-sm sm:px-6">
@@ -12,6 +14,12 @@ export default function Footer() {
         <p className="mt-4 text-sm text-text/55">
           Buddhist Learning Card · สำหรับนักเรียนระดับมัธยมต้น
         </p>
+        <Link
+          href="/admin/login"
+          className="mt-5 inline-block text-xs text-text/35 transition hover:text-text/60"
+        >
+          Admin Login
+        </Link>
       </div>
     </footer>
   );

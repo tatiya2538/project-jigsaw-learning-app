@@ -36,6 +36,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# local audio/images (hosted on Vercel Blob)
+/public/audio
+/public/characters
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

@@ -1,11 +1,11 @@
 import Image from "next/image";
 
-export default function BiographyCard({ title, paragraphs, imageSrc, name }) {
+export default function BiographyCard({ paragraphs, imageSrc, name }) {
   return (
     <section className="px-4 py-10 sm:px-6 sm:py-14">
       <div className="mx-auto max-w-3xl">
         <div className="mb-6 text-center animate-fade-in">
-          <h2 className="text-2xl font-bold text-text sm:text-3xl">{title}</h2>
+          <h2 className="text-2xl font-bold text-text sm:text-3xl">ฉันคือใคร</h2>
           <div className="mx-auto mt-3 h-1.5 w-16 rounded-full bg-primary" />
         </div>
 

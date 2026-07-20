@@ -179,7 +179,7 @@ export default function AudioPlayer({
       <div className="mx-auto max-w-3xl">
         <div className="mt-8 mb-8 text-center animate-fade-in">
           <h2 className="text-2xl font-bold text-text sm:text-3xl">
-            Audio Narration
+            เสียงบรรยาย
           </h2>
           <p className="mt-2 text-text/70">
             ฟังเรื่องราวก่อนไปเล่าให้เพื่อนฟัง

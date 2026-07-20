@@ -1,11 +1,26 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import Footer from "../components/Footer";
+
 import { characters } from "../data/characters";
 
-const characterList = Object.values(characters);
+import { getCharacterContent } from "../lib/content";
 
-export default function HomePage() {
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const characterList = await Promise.all(
+    Object.values(characters).map(async (character) => {
+      const content = await getCharacterContent(character.slug);
+      return {
+        slug: character.slug,
+        image: character.image,
+        data: content,
+      };
+    }),
+  );
+
   return (
     <main className="min-h-screen px-4 py-10 sm:px-6 sm:py-14">
       <div className="mx-auto max-w-3xl text-center">
@@ -54,6 +69,8 @@ export default function HomePage() {
           </Link>
         ))}
       </div>
+
+      <Footer />
     </main>
   );
 }

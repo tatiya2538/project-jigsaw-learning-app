@@ -1,3 +1,5 @@
+import { cookies } from "next/headers";
+
 import AudioPlayer from "./AudioPlayer";
 import BiographyCard from "./BiographyCard";
 import DiscussionCard from "./DiscussionCard";
@@ -5,47 +7,134 @@ import Footer from "./Footer";
 import Hero from "./Hero";
 import LifeLessonCard from "./LifeLessonCard";
 import QuizCard from "./QuizCard";
+import SectionCapture from "./SectionCapture";
 import Timeline from "./Timeline";
 import VirtueCard from "./VirtueCard";
 
-export default function CharacterPage({ characterData, imageSrc, audioSrc }) {
+import { getAdminCookieName, verifyAdminToken } from "../lib/auth";
+import { normalizeSections } from "../lib/sections";
+
+async function checkIsAdmin() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(getAdminCookieName())?.value;
+  return verifyAdminToken(token);
+}
+
+export default async function CharacterPage({
+  characterData,
+  imageSrc,
+  audioSrc,
+}) {
+  const sections = normalizeSections(characterData.sections);
+  const isAdmin = await checkIsAdmin();
+  const filePrefix = characterData.name || "character";
+
   return (
     <main className="min-h-screen">
-      <Hero
-        name={characterData.name}
-        shortTitle={characterData.shortTitle}
-        intro={characterData.heroIntro}
-        imageSrc={imageSrc}
-      />
+      {isAdmin ? (
+        <div className="sticky top-0 z-30 border-b border-secondary/50 bg-amber-50/95 px-4 py-2 text-center text-xs font-medium text-amber-900 backdrop-blur-sm sm:px-6">
+          โหมด Admin — กดปุ่ม Capture ที่มุมขวาของแต่ละส่วนเพื่อบันทึกรูปไปพิมพ์เป็นผลงาน
+        </div>
+      ) : null}
 
-      <AudioPlayer
-        title={characterData.audio.title}
-        subtitle={characterData.audio.subtitle}
-        duration={characterData.audio.duration}
-        imageSrc={imageSrc}
-        name={characterData.name}
-        audioSrc={audioSrc}
-      />
+      {sections.hero ? (
+        <SectionCapture
+          enabled={isAdmin}
+          label="hero"
+          filePrefix={filePrefix}
+        >
+          <Hero
+            name={characterData.name}
+            shortTitle={characterData.shortTitle}
+            intro={characterData.heroIntro}
+            imageSrc={imageSrc}
+          />
+        </SectionCapture>
+      ) : null}
 
-      <BiographyCard
-        title={characterData.biography.title}
-        paragraphs={characterData.biography.paragraphs}
-        imageSrc={imageSrc}
-        name={characterData.name}
-      />
+      {sections.audio ? (
+        <SectionCapture
+          enabled={isAdmin}
+          label="เสียงบรรยาย"
+          filePrefix={filePrefix}
+        >
+          <AudioPlayer
+            title={characterData.audio.title}
+            subtitle={characterData.audio.subtitle}
+            duration={characterData.audio.duration}
+            imageSrc={imageSrc}
+            name={characterData.name}
+            audioSrc={audioSrc}
+          />
+        </SectionCapture>
+      ) : null}
 
-      <Timeline events={characterData.timeline} />
+      {sections.biography ? (
+        <SectionCapture
+          enabled={isAdmin}
+          label="ฉันคือใคร"
+          filePrefix={filePrefix}
+        >
+          <BiographyCard
+            paragraphs={characterData.biography.paragraphs}
+            imageSrc={imageSrc}
+            name={characterData.name}
+          />
+        </SectionCapture>
+      ) : null}
 
-      <VirtueCard virtues={characterData.virtues} />
+      {sections.timeline ? (
+        <SectionCapture
+          enabled={isAdmin}
+          label="เหตุการณ์สำคัญ"
+          filePrefix={filePrefix}
+        >
+          <Timeline events={characterData.timeline} />
+        </SectionCapture>
+      ) : null}
 
-      <LifeLessonCard
-        quote={characterData.lifeLesson.quote}
-        note={characterData.lifeLesson.note}
-      />
+      {sections.virtues ? (
+        <SectionCapture
+          enabled={isAdmin}
+          label="คุณธรรมที่ได้รับ"
+          filePrefix={filePrefix}
+        >
+          <VirtueCard virtues={characterData.virtues} />
+        </SectionCapture>
+      ) : null}
 
-      <DiscussionCard questions={characterData.discussions} />
+      {sections.lifeLesson ? (
+        <SectionCapture
+          enabled={isAdmin}
+          label="ข้อคิดในชีวิตประจำวัน"
+          filePrefix={filePrefix}
+        >
+          <LifeLessonCard
+            quote={characterData.lifeLesson.quote}
+            note={characterData.lifeLesson.note}
+          />
+        </SectionCapture>
+      ) : null}
 
-      <QuizCard questions={characterData.quiz} />
+      {sections.discussions ? (
+        <SectionCapture
+          enabled={isAdmin}
+          label="คำถามชวนคิด"
+          filePrefix={filePrefix}
+        >
+          <DiscussionCard questions={characterData.discussions} />
+        </SectionCapture>
+      ) : null}
+
+      {sections.quiz ? (
+        <SectionCapture
+          enabled={isAdmin}
+          label="Mini-Quiz"
+          filePrefix={filePrefix}
+        >
+          <QuizCard questions={characterData.quiz} />
+        </SectionCapture>
+      ) : null}
 
       <Footer />
     </main>

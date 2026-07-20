@@ -101,8 +101,8 @@ export const characterData = {
   audio: {
     title: "เรื่องราวของพระนางมหาประชาบดีโคตมีเถรี",
     subtitle: "เสียงบรรยายสำหรับกิจกรรมการเรียนรู้",
-    duration: "02:10",
-    durationSeconds: 130,
+    duration: "00:45",
+    durationSeconds: 45,
   },
   quiz: [
     {
