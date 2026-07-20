@@ -8,6 +8,7 @@ import Hero from "./Hero";
 import LifeLessonCard from "./LifeLessonCard";
 import QuizCard from "./QuizCard";
 import SectionCapture from "./SectionCapture";
+import TextToSpeechControls from "./TextToSpeechControls";
 import Timeline from "./Timeline";
 import VirtueCard from "./VirtueCard";
 
@@ -58,14 +59,27 @@ export default async function CharacterPage({
           label="เสียงบรรยาย"
           filePrefix={filePrefix}
         >
-          <AudioPlayer
-            title={characterData.audio.title}
-            subtitle={characterData.audio.subtitle}
-            duration={characterData.audio.duration}
-            imageSrc={imageSrc}
-            name={characterData.name}
-            audioSrc={audioSrc}
-          />
+          {audioSrc ? (
+            <AudioPlayer
+              title={characterData.audio.title}
+              subtitle={characterData.audio.subtitle}
+              duration={characterData.audio.duration}
+              imageSrc={imageSrc}
+              name={characterData.name}
+              audioSrc={audioSrc}
+            />
+          ) : (
+            <TextToSpeechControls
+              title={characterData.audio?.title || `เรื่องราวของ${characterData.name}`}
+              subtitle={
+                characterData.audio?.subtitle ||
+                "อ่านชีวประวัติให้นักเรียนฟัง"
+              }
+              paragraphs={characterData.biography?.paragraphs || []}
+              imageSrc={imageSrc}
+              name={characterData.name}
+            />
+          )}
         </SectionCapture>
       ) : null}
 
