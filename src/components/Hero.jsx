@@ -1,5 +1,7 @@
 import Image from "next/image";
 
+import { SITE_NAME } from "../lib/config";
+
 export default function Hero({ name, shortTitle, intro, imageSrc }) {
   return (
     <section className="relative overflow-hidden px-4 pb-12 pt-10 sm:px-6 sm:pb-16 sm:pt-14">
@@ -8,9 +10,9 @@ export default function Hero({ name, shortTitle, intro, imageSrc }) {
       <div className="pointer-events-none absolute bottom-0 left-1/2 h-40 w-72 -translate-x-1/2 rounded-full bg-primary/15 blur-3xl" />
 
       <div className="relative mx-auto flex max-w-3xl flex-col items-center text-center animate-fade-in">
-        <span className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-1.5 text-sm font-medium text-primary shadow-soft backdrop-blur-sm">
-          <span className="h-2 w-2 rounded-full bg-accent" />
-          Buddhist Learning Card
+        <span className="mb-4 inline-flex max-w-full items-center gap-2 rounded-full bg-white/80 px-4 py-1.5 text-xs font-medium text-primary shadow-soft backdrop-blur-sm sm:text-sm">
+          <span className="h-2 w-2 shrink-0 rounded-full bg-accent" />
+          <span className="text-left leading-snug">{SITE_NAME}</span>
         </span>
 
         <div className="relative mb-6 h-64 w-64 animate-float sm:h-80 sm:w-80">
@@ -42,7 +44,7 @@ export default function Hero({ name, shortTitle, intro, imageSrc }) {
             อ่าน 2–3 นาที
           </span>
           <span className="rounded-full bg-white px-3 py-1 shadow-soft">
-            Jigsaw Learning
+            เรียนรู้แล้วเล่าต่อ
           </span>
         </div>
       </div>

@@ -1,16 +1,21 @@
 import { put } from "@vercel/blob";
 
-import { getCharacter } from "../data/characters";
+import { getLocalCharacter } from "../data/characters";
 
+import {
+  ensureCatalogSyncedWithSeeds,
+  getCharacterEntry,
+  listCharacterEntries,
+} from "./catalog";
+import { createCharacterTemplate } from "./character-template";
 import { getContentBlobUrl } from "./config";
 import { withNormalizedContent } from "./sections";
 
 export async function getCharacterContent(slug) {
-  const character = getCharacter(slug);
-  if (!character) return null;
+  const entry = await getCharacterEntry(slug);
+  if (!entry) return null;
 
   try {
-    // Bust CDN/Next cache so admin toggles show up immediately
     const response = await fetch(`${getContentBlobUrl(slug)}?t=${Date.now()}`, {
       cache: "no-store",
     });
@@ -22,10 +27,19 @@ export async function getCharacterContent(slug) {
       }
     }
   } catch {
-    // fall back to local seed data
+    // fall back to local seed / template
   }
 
-  return withNormalizedContent(structuredClone(character.data));
+  if (entry.data) {
+    return withNormalizedContent(structuredClone(entry.data));
+  }
+
+  return withNormalizedContent(
+    createCharacterTemplate({
+      name: entry.label,
+      shortTitle: "บุคคลสำคัญทางพระพุทธศาสนา",
+    }),
+  );
 }
 
 export async function saveCharacterContent(slug, data) {
@@ -35,9 +49,9 @@ export async function saveCharacterContent(slug, data) {
     );
   }
 
-  const character = getCharacter(slug);
-  if (!character) {
-    throw new Error("ไม่พบตัวละคร");
+  const entry = await getCharacterEntry(slug);
+  if (!entry) {
+    throw new Error("ไม่พบบุคคลใน catalog — เพิ่มบุคคลใหม่จากหน้า Admin ก่อน");
   }
 
   const payload = {
@@ -62,17 +76,38 @@ export async function saveCharacterContent(slug, data) {
 }
 
 export async function seedAllCharacterContent() {
-  const { characterSlugs, getCharacter: getChar } = await import(
-    "../data/characters"
-  );
-
+  const catalog = await ensureCatalogSyncedWithSeeds();
   const results = [];
 
-  for (const slug of characterSlugs) {
-    const character = getChar(slug);
-    const blob = await saveCharacterContent(slug, character.data);
-    results.push({ slug, url: blob.url });
+  for (const entry of catalog.characters) {
+    const local = getLocalCharacter(entry.slug);
+
+    // Only overwrite content for built-in seeds — keep admin-created cards
+    if (!local?.data) {
+      continue;
+    }
+
+    const blob = await saveCharacterContent(entry.slug, local.data);
+    results.push({ slug: entry.slug, url: blob.url });
   }
 
   return results;
+}
+
+export async function listCharactersForUi() {
+  const entries = await listCharacterEntries({ activeOnly: true });
+
+  return Promise.all(
+    entries.map(async (entry) => {
+      const content = await getCharacterContent(entry.slug);
+      return {
+        slug: entry.slug,
+        label: entry.label,
+        image: entry.image,
+        audio: entry.audio,
+        active: entry.active !== false,
+        data: content,
+      };
+    }),
+  );
 }

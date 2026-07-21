@@ -76,6 +76,7 @@ export default async function CharacterPage({
                 "อ่านชีวประวัติให้นักเรียนฟัง"
               }
               paragraphs={characterData.biography?.paragraphs || []}
+              tts={characterData.audio?.tts || null}
               imageSrc={imageSrc}
               name={characterData.name}
             />

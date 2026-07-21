@@ -3,38 +3,29 @@ import Link from "next/link";
 
 import Footer from "../components/Footer";
 
-import { characters } from "../data/characters";
-
-import { getCharacterContent } from "../lib/content";
+import { SITE_NAME } from "../lib/config";
+import { listCharactersForUi } from "../lib/content";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const characterList = await Promise.all(
-    Object.values(characters).map(async (character) => {
-      const content = await getCharacterContent(character.slug);
-      return {
-        slug: character.slug,
-        image: character.image,
-        data: content,
-      };
-    }),
-  );
+  const characterList = await listCharactersForUi();
 
   return (
     <main className="min-h-screen px-4 py-10 sm:px-6 sm:py-14">
       <div className="mx-auto max-w-3xl text-center">
-        <span className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-1.5 text-sm font-medium text-primary shadow-soft">
-          <span className="h-2 w-2 rounded-full bg-accent" />
-          Buddhist Learning Card
-        </span>
-
-        <h1 className="text-3xl font-bold text-text sm:text-4xl">
-          Jigsaw Learning
+        <h1 className="text-2xl font-bold leading-snug text-text sm:text-3xl md:text-4xl">
+          {SITE_NAME}
         </h1>
         <p className="mt-3 text-base leading-relaxed text-text/75 sm:text-lg">
           เลือกบุคคลสำคัญเพื่อเรียนรู้ภายใน 2–3 นาที ก่อนไปอธิบายให้เพื่อนฟัง
         </p>
+        <Link
+          href="/game"
+          className="mt-5 inline-flex rounded-2xl bg-gradient-to-r from-primary to-amber-500 px-5 py-3 text-sm font-bold text-white shadow-soft transition hover:scale-[1.02]"
+        >
+          🎮 เล่นเกมทาย &quot;ฉันคือใคร?&quot;
+        </Link>
       </div>
 
       <div className="mx-auto mt-10 grid max-w-3xl grid-cols-1 gap-4 sm:grid-cols-2">
@@ -48,24 +39,18 @@ export default async function HomePage() {
             <div className="relative mb-4 h-36 w-full overflow-hidden rounded-2xl bg-gradient-to-br from-secondary via-amber-50 to-orange-50">
               <Image
                 src={character.image}
-                alt={character.data.name}
+                alt={character.data?.name || character.label}
                 fill
-                sizes="(max-width: 640px) 100vw, 320px"
+                sizes="(max-width: 640px) 100vw, 50vw"
                 className="object-contain p-2 transition duration-300 group-hover:scale-105"
               />
             </div>
-            <p className="text-sm font-medium text-primary">
-              บัตรที่ {index + 1}
-            </p>
-            <h2 className="mt-2 text-lg font-bold text-text group-hover:text-primary sm:text-xl">
-              {character.data.name}
+            <h2 className="text-lg font-bold text-text">
+              {character.data?.name || character.label}
             </h2>
-            <p className="mt-2 text-sm leading-relaxed text-text/70 sm:text-base">
-              {character.data.shortTitle}
+            <p className="mt-1 text-sm text-primary">
+              {character.data?.shortTitle}
             </p>
-            <span className="mt-4 inline-flex text-sm font-semibold text-accent">
-              เริ่มเรียนรู้ →
-            </span>
           </Link>
         ))}
       </div>
