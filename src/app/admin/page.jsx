@@ -1,6 +1,9 @@
 import AdminDashboard from "../../components/admin/AdminDashboard";
 
-import { listCharacterEntries } from "../../lib/catalog";
+import {
+  listCharacterEntries,
+  listGameEntries,
+} from "../../lib/catalog";
 import { SITE_NAME } from "../../lib/config";
 
 export const dynamic = "force-dynamic";
@@ -10,11 +13,14 @@ export const metadata = {
 };
 
 export default async function AdminPage() {
-  const list = await listCharacterEntries();
+  const [characters, games] = await Promise.all([
+    listCharacterEntries(),
+    listGameEntries(),
+  ]);
 
   return (
     <main className="min-h-screen">
-      <AdminDashboard characters={list} />
+      <AdminDashboard characters={characters} games={games} />
     </main>
   );
 }

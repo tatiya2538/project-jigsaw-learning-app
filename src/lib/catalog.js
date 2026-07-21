@@ -6,6 +6,7 @@ import {
   getLocalCharacter,
   toCatalogEntry,
 } from "../data/characters";
+import { buildDefaultGameEntries } from "../data/games";
 
 import { BLOB_BASE } from "./config";
 import {
@@ -29,6 +30,15 @@ function sortEntries(entries = []) {
   });
 }
 
+function sortGames(entries = []) {
+  return [...entries].sort((a, b) => {
+    const orderA = Number.isFinite(a.order) ? a.order : 999;
+    const orderB = Number.isFinite(b.order) ? b.order : 999;
+    if (orderA !== orderB) return orderA - orderB;
+    return String(a.id).localeCompare(String(b.id));
+  });
+}
+
 function normalizeEntry(entry, index = 0) {
   if (!entry?.slug) return null;
 
@@ -40,6 +50,57 @@ function normalizeEntry(entry, index = 0) {
     active: entry.active !== false,
     order: Number.isFinite(entry.order) ? entry.order : index + 1,
   };
+}
+
+function normalizeGame(entry, index = 0) {
+  if (!entry?.id) return null;
+
+  const defaults = buildDefaultGameEntries().find((item) => item.id === entry.id);
+  const href = entry.href || defaults?.href;
+  if (!href) return null;
+
+  return {
+    id: entry.id,
+    label: entry.label || defaults?.label || entry.id,
+    href,
+    emoji: entry.emoji || defaults?.emoji || "🎮",
+    tone: entry.tone || defaults?.tone || "from-primary to-amber-500",
+    active: entry.active !== false,
+    order: Number.isFinite(entry.order)
+      ? entry.order
+      : defaults?.order || index + 1,
+  };
+}
+
+function mergeGamesWithDefaults(gamesEntries = []) {
+  const byId = new Map();
+
+  gamesEntries.forEach((entry, index) => {
+    const normalized = normalizeGame(entry, index);
+    if (normalized) byId.set(normalized.id, normalized);
+  });
+
+  for (const seed of buildDefaultGameEntries()) {
+    const current = byId.get(seed.id);
+    if (!current) {
+      byId.set(seed.id, normalizeGame(seed));
+      continue;
+    }
+
+    byId.set(
+      seed.id,
+      normalizeGame({
+        ...seed,
+        ...current,
+        id: seed.id,
+        href: current.href || seed.href,
+        // คงค่า active จาก catalog เสมอ (รวม false)
+        active: current.active,
+      }),
+    );
+  }
+
+  return sortGames([...byId.values()].filter(Boolean));
 }
 
 export async function readCatalogFromBlob() {
@@ -59,6 +120,9 @@ export async function readCatalogFromBlob() {
 
     return {
       characters: sortEntries(entries),
+      games: mergeGamesWithDefaults(
+        Array.isArray(data?.games) ? data.games : [],
+      ),
       updatedAt: data.updatedAt || null,
     };
   } catch {
@@ -66,19 +130,24 @@ export async function readCatalogFromBlob() {
   }
 }
 
-export async function saveCatalog(entries) {
+async function writeCatalogDocument({ characters, games }) {
   if (!process.env.BLOB_READ_WRITE_TOKEN) {
     throw new Error(
       "ยังไม่มี BLOB_READ_WRITE_TOKEN ใน environment — เชื่อม Blob Store แล้วดึง env ใหม่",
     );
   }
 
-  const characters = sortEntries(
-    entries.map((entry, index) => normalizeEntry(entry, index)).filter(Boolean),
+  const existing = await readCatalogFromBlob();
+  const nextCharacters = sortEntries(
+    characters.map((entry, index) => normalizeEntry(entry, index)).filter(Boolean),
+  );
+  const nextGames = mergeGamesWithDefaults(
+    games ?? existing?.games ?? buildDefaultGameEntries(),
   );
 
   const payload = {
-    characters,
+    characters: nextCharacters,
+    games: nextGames,
     updatedAt: new Date().toISOString(),
   };
 
@@ -94,6 +163,11 @@ export async function saveCatalog(entries) {
   return { ...payload, url: blob.url };
 }
 
+/** Save character list; preserves games already in catalog. */
+export async function saveCatalog(entries) {
+  return writeCatalogDocument({ characters: entries });
+}
+
 /** Catalog from Blob, or local seeds if catalog is missing. */
 export async function getCatalog() {
   const fromBlob = await readCatalogFromBlob();
@@ -101,6 +175,7 @@ export async function getCatalog() {
 
   return {
     characters: buildLocalCatalogEntries(),
+    games: buildDefaultGameEntries(),
     updatedAt: null,
   };
 }
@@ -109,6 +184,21 @@ export async function listCharacterEntries({ activeOnly = false } = {}) {
   const catalog = await getCatalog();
   if (!activeOnly) return catalog.characters;
   return catalog.characters.filter((entry) => entry.active !== false);
+}
+
+export async function listGameEntries({ activeOnly = false } = {}) {
+  const catalog = await getCatalog();
+  const games = catalog.games || buildDefaultGameEntries();
+  if (!activeOnly) return games;
+  return games.filter((entry) => entry.active !== false);
+}
+
+export async function getGameEntry(id, { activeOnly = false } = {}) {
+  const games = await listGameEntries({ activeOnly: false });
+  const entry = games.find((item) => item.id === id);
+  if (!entry) return null;
+  if (activeOnly && entry.active === false) return null;
+  return entry;
 }
 
 export async function getCharacterEntry(slug, { activeOnly = false } = {}) {
@@ -130,12 +220,39 @@ export async function setCharacterActive(slug, active) {
   return updateCatalogEntry(slug, { active: Boolean(active) });
 }
 
+export async function setGameActive(id, active) {
+  const catalog = await getCatalog();
+  const games = [...(catalog.games || buildDefaultGameEntries())];
+  const index = games.findIndex((item) => item.id === id);
+
+  if (index < 0) {
+    throw new Error("ไม่พบเกมใน catalog");
+  }
+
+  games[index] = normalizeGame(
+    {
+      ...games[index],
+      active: Boolean(active),
+      id,
+    },
+    index,
+  );
+
+  return writeCatalogDocument({
+    characters: catalog.characters,
+    games,
+  });
+}
+
 export async function ensureCatalogSyncedWithSeeds() {
   const existing = await readCatalogFromBlob();
   const localEntries = buildLocalCatalogEntries();
 
   if (!existing?.characters?.length) {
-    return saveCatalog(localEntries);
+    return writeCatalogDocument({
+      characters: localEntries,
+      games: buildDefaultGameEntries(),
+    });
   }
 
   const bySlug = new Map(
@@ -146,7 +263,6 @@ export async function ensureCatalogSyncedWithSeeds() {
     if (!bySlug.has(local.slug)) {
       bySlug.set(local.slug, local);
     } else {
-      // Keep admin overrides for image/audio/label, but preserve slug
       const current = bySlug.get(local.slug);
       bySlug.set(local.slug, {
         ...local,
@@ -156,7 +272,10 @@ export async function ensureCatalogSyncedWithSeeds() {
     }
   }
 
-  return saveCatalog([...bySlug.values()]);
+  return writeCatalogDocument({
+    characters: [...bySlug.values()],
+    games: mergeGamesWithDefaults(existing.games || []),
+  });
 }
 
 export async function createCharacter({
@@ -222,7 +341,10 @@ export async function createCharacter({
     nextOrder,
   );
 
-  const savedCatalog = await saveCatalog([...catalog.characters, entry]);
+  const savedCatalog = await writeCatalogDocument({
+    characters: [...catalog.characters, entry],
+    games: catalog.games,
+  });
 
   return {
     entry,
@@ -249,5 +371,8 @@ export async function updateCatalogEntry(slug, patch = {}) {
     index,
   );
 
-  return saveCatalog(next);
+  return writeCatalogDocument({
+    characters: next,
+    games: catalog.games,
+  });
 }
