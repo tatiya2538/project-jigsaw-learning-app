@@ -1,7 +1,9 @@
 import AdminLoginForm from "../../../components/admin/AdminLoginForm";
 
+import { SITE_NAME } from "../../../lib/config";
+
 export const metadata = {
-  title: "Admin Login | Buddhist Learning Card",
+  title: `Admin Login | ${SITE_NAME}`,
 };
 
 export default function AdminLoginPage() {

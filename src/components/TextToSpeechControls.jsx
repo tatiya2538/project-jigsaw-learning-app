@@ -3,6 +3,8 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
+import { isTtsUpToDate } from "../lib/tts-shared";
+
 function SpeakerIcon() {
   return (
     <svg
@@ -45,33 +47,27 @@ function formatTime(seconds) {
 
 export default function TextToSpeechControls({
   paragraphs = [],
+  tts = null,
   title = "เรื่องราวตัวละคร",
   subtitle = "อ่านชีวประวัติให้นักเรียนฟัง",
   imageSrc,
   name,
 }) {
   const audioRef = useRef(null);
-  const requestIdRef = useRef(0);
-
-  const [isLoading, setIsLoading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [audioUrl, setAudioUrl] = useState("");
-  const [voiceLabel, setVoiceLabel] = useState("Premwadee (Edge Neural)");
-  const [fromCache, setFromCache] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [totalTime, setTotalTime] = useState(0);
   const [error, setError] = useState("");
 
-  const textBlocks = paragraphs
-    .map((item) => String(item || "").trim())
-    .filter(Boolean);
-  const textKey = textBlocks.join("\n\n");
+  const ready = isTtsUpToDate(paragraphs, tts);
+  const audioUrl = ready ? tts.url : "";
+  const voiceLabel = tts?.voiceLabel || "Premwadee (Edge Neural)";
   const progress =
     totalTime > 0 ? Math.min((currentTime / totalTime) * 100, 100) : 0;
 
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio) return undefined;
+    if (!audio || !audioUrl) return undefined;
 
     const handleTimeUpdate = () => setCurrentTime(audio.currentTime || 0);
     const handleLoaded = () => setTotalTime(audio.duration || 0);
@@ -98,79 +94,23 @@ export default function TextToSpeechControls({
     };
   }, [audioUrl]);
 
-  // Reset player when biography text changes (admin edit)
   useEffect(() => {
-    requestIdRef.current += 1;
-    setAudioUrl("");
-    setFromCache(false);
     setIsPlaying(false);
-    setIsLoading(false);
     setCurrentTime(0);
     setTotalTime(0);
     setError("");
-  }, [textKey]);
+  }, [audioUrl]);
 
-  async function ensureAudioUrl() {
-    if (audioUrl) return audioUrl;
-
-    setIsLoading(true);
-    setError("");
-    const requestId = ++requestIdRef.current;
-
-    try {
-      const response = await fetch("/api/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paragraphs: textBlocks }),
-      });
-
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(data.error || "สร้างเสียงไม่สำเร็จ");
-      }
-
-      if (requestId !== requestIdRef.current) {
-        return null;
-      }
-
-      setAudioUrl(data.url);
-      setFromCache(Boolean(data.cached));
-      setVoiceLabel(data.voiceLabel || "Premwadee (Edge Neural)");
-      return data.url;
-    } finally {
-      if (requestId === requestIdRef.current) {
-        setIsLoading(false);
-      }
-    }
-  }
-
-  async function handleToggle() {
+  async function handlePlay() {
     const audio = audioRef.current;
-    if (!audio) return;
-
-    if (isPlaying) {
-      audio.pause();
-      return;
-    }
-
-    if (!textBlocks.length) {
-      setError("ยังไม่มีข้อความให้อ่าน");
-      return;
-    }
+    if (!audio || !audioUrl) return;
 
     try {
-      const url = await ensureAudioUrl();
-      if (!url || !audioRef.current) return;
-
-      if (audioRef.current.src !== url) {
-        audioRef.current.src = url;
-      }
-
-      await audioRef.current.play();
-    } catch (err) {
+      setError("");
+      await audio.play();
+    } catch {
       setIsPlaying(false);
-      setError(err.message || "เล่นเสียงไม่สำเร็จ");
+      setError("เล่นเสียงไม่สำเร็จ");
     }
   }
 
@@ -183,6 +123,14 @@ export default function TextToSpeechControls({
     setCurrentTime(0);
     setIsPlaying(false);
   }
+
+  const statusMessage = !tts?.url
+    ? "ยังไม่มีไฟล์เสียง — รอแอดมินสร้างจากหน้า Admin"
+    : !ready
+      ? "ชีวประวัติถูกแก้แล้ว — รอแอดมินสร้างเสียงใหม่"
+      : isPlaying
+        ? "กำลังอ่านชีวประวัติ..."
+        : "กดปุ่มเพื่อฟังชีวประวัติ";
 
   return (
     <section className="px-4 py-10 sm:px-6 sm:py-14">
@@ -198,7 +146,11 @@ export default function TextToSpeechControls({
         </div>
 
         <div className="rounded-3xl bg-white p-5 shadow-card sm:p-7 animate-fade-in-up">
-          <audio ref={audioRef} preload="none" />
+          {audioUrl ? (
+            <audio ref={audioRef} src={audioUrl} preload="metadata" />
+          ) : (
+            <audio ref={audioRef} preload="none" />
+          )}
 
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
             <div className="relative mx-auto h-28 w-28 shrink-0 overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-amber-300 to-secondary shadow-soft sm:mx-0 sm:h-32 sm:w-32">
@@ -217,14 +169,7 @@ export default function TextToSpeechControls({
               <p className="mt-2 inline-flex rounded-full bg-secondary/60 px-3 py-1 text-sm font-medium text-amber-800">
                 เสียง Neural ภาษาไทย (Edge TTS)
               </p>
-              <p className="mt-2 text-xs text-text/50">
-                เสียง: {voiceLabel}
-                {audioUrl
-                  ? fromCache
-                    ? " · จาก cache"
-                    : " · สร้างใหม่"
-                  : ""}
-              </p>
+              <p className="mt-2 text-xs text-text/50">เสียง: {voiceLabel}</p>
             </div>
           </div>
 
@@ -232,44 +177,28 @@ export default function TextToSpeechControls({
             <div className="h-2.5 overflow-hidden rounded-full bg-secondary/50">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-primary to-amber-400 transition-all"
-                style={{ width: `${progress}%` }}
+                style={{ width: `${ready ? progress : 0}%` }}
               />
             </div>
             <div className="mt-2 flex justify-between text-xs font-medium text-text/55 sm:text-sm">
               <span>{formatTime(currentTime)}</span>
-              <span>
-                {totalTime > 0
-                  ? formatTime(totalTime)
-                  : `${textBlocks.length} ย่อหน้า`}
-              </span>
+              <span>{totalTime > 0 ? formatTime(totalTime) : "--:--"}</span>
             </div>
           </div>
 
           <div className="mt-5 flex flex-wrap items-center gap-4">
             <button
               type="button"
-              onClick={isPlaying ? handleStop : handleToggle}
-              disabled={isLoading}
-              className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-amber-500 text-white shadow-soft transition duration-300 hover:scale-105 active:scale-95 disabled:cursor-wait disabled:opacity-70"
+              onClick={isPlaying ? handleStop : handlePlay}
+              disabled={!ready}
+              className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-amber-500 text-white shadow-soft transition duration-300 hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
               aria-label={isPlaying ? "หยุดอ่าน" : "เริ่มอ่าน"}
             >
-              {isLoading ? (
-                <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-              ) : isPlaying ? (
-                <StopIcon />
-              ) : (
-                <SpeakerIcon />
-              )}
+              {isPlaying ? <StopIcon /> : <SpeakerIcon />}
             </button>
 
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-text/80">
-                {isLoading
-                  ? "กำลังสร้างเสียงเนียน ๆ..."
-                  : isPlaying
-                    ? "กำลังอ่านชีวประวัติ..."
-                    : "กดปุ่มเพื่อให้อ่านชีวประวัติ"}
-              </p>
+              <p className="text-sm font-medium text-text/80">{statusMessage}</p>
               {error ? (
                 <p className="mt-1 text-xs font-medium text-orange-600">
                   {error}

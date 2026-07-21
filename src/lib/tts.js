@@ -4,9 +4,21 @@ import { put } from "@vercel/blob";
 import { MsEdgeTTS, OUTPUT_FORMAT } from "msedge-tts";
 
 import { BLOB_BASE } from "./config";
+import {
+  TTS_VOICE,
+  TTS_VOICE_LABEL,
+  buildTtsText,
+  normalizeTtsParagraphs,
+} from "./tts-shared";
 
-export const TTS_VOICE = "th-TH-PremwadeeNeural";
-export const TTS_VOICE_LABEL = "Premwadee (Edge Neural)";
+export {
+  TTS_VOICE,
+  TTS_VOICE_LABEL,
+  buildTtsMeta,
+  buildTtsText,
+  isTtsUpToDate,
+  normalizeTtsParagraphs,
+} from "./tts-shared";
 
 const OUTPUT = OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3;
 const MAX_CHUNK_CHARS = 220;
@@ -19,16 +31,6 @@ function escapeXml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&apos;");
-}
-
-export function normalizeTtsParagraphs(paragraphs = []) {
-  return paragraphs
-    .map((item) => String(item || "").trim())
-    .filter(Boolean);
-}
-
-export function buildTtsText(paragraphs = []) {
-  return normalizeTtsParagraphs(paragraphs).join("\n\n");
 }
 
 export function hashTtsText(text, voice = TTS_VOICE) {
@@ -197,6 +199,7 @@ export async function getOrCreateTtsAudio(paragraphs = []) {
       hash,
       voice: TTS_VOICE,
       voiceLabel: TTS_VOICE_LABEL,
+      sourceText: text,
     };
   }
 
@@ -224,5 +227,6 @@ export async function getOrCreateTtsAudio(paragraphs = []) {
     hash,
     voice: TTS_VOICE,
     voiceLabel: TTS_VOICE_LABEL,
+    sourceText: text,
   };
 }

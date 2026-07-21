@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { SECTION_LABELS, normalizeSections } from "../../lib/sections";
+import { buildTtsMeta, isTtsUpToDate } from "../../lib/tts-shared";
 
 function Section({ title, children }) {
   return (
@@ -34,6 +35,12 @@ export default function AdminEditor({ slug, initialData }) {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [generatingTts, setGeneratingTts] = useState(false);
+
+  const ttsReady = isTtsUpToDate(
+    data.biography?.paragraphs || [],
+    data.audio?.tts,
+  );
 
   function updateField(path, value) {
     setData((prev) => {
@@ -60,6 +67,21 @@ export default function AdminEditor({ slug, initialData }) {
     }));
   }
 
+  async function saveContent(payload) {
+    const response = await fetch(`/api/admin/content/${slug}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(result.error || "บันทึกไม่สำเร็จ");
+    }
+
+    return result;
+  }
+
   async function handleSave(event) {
     event.preventDefault();
     setSaving(true);
@@ -67,23 +89,53 @@ export default function AdminEditor({ slug, initialData }) {
     setError("");
 
     try {
-      const response = await fetch(`/api/admin/content/${slug}`, {
-        method: "PUT",
+      await saveContent(data);
+      setMessage("บันทึกสำเร็จแล้ว — ลองรีเฟรชหน้าบัตรได้เลย");
+    } catch (err) {
+      setError(err.message || "เกิดข้อผิดพลาดขณะบันทึก");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleGenerateTts() {
+    setGeneratingTts(true);
+    setMessage("");
+    setError("");
+
+    try {
+      const response = await fetch("/api/admin/tts", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          paragraphs: data.biography?.paragraphs || [],
+        }),
       });
       const result = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        setError(result.error || "บันทึกไม่สำเร็จ");
-        return;
+        throw new Error(result.error || "สร้างเสียงไม่สำเร็จ");
       }
 
-      setMessage("บันทึกสำเร็จแล้ว — ลองรีเฟรชหน้าบัตรได้เลย");
-    } catch {
-      setError("เกิดข้อผิดพลาดขณะบันทึก");
+      const ttsMeta = buildTtsMeta(result, data.biography?.paragraphs || []);
+      const nextData = structuredClone(data);
+      nextData.audio = {
+        ...(nextData.audio || {}),
+        tts: ttsMeta,
+      };
+
+      setData(nextData);
+      await saveContent(nextData);
+
+      setMessage(
+        result.cached
+          ? "ใช้เสียงจาก cache แล้ว และบันทึกลงเนื้อหาแล้ว"
+          : "สร้างเสียงใหม่สำเร็จ และบันทึกลงเนื้อหาแล้ว",
+      );
+    } catch (err) {
+      setError(err.message || "สร้างเสียงไม่สำเร็จ");
     } finally {
-      setSaving(false);
+      setGeneratingTts(false);
     }
   }
 
@@ -104,7 +156,7 @@ export default function AdminEditor({ slug, initialData }) {
         </div>
         <button
           type="submit"
-          disabled={saving}
+          disabled={saving || generatingTts}
           className="rounded-2xl bg-gradient-to-r from-primary to-amber-500 px-5 py-3 text-sm font-bold text-white shadow-soft disabled:opacity-60"
         >
           {saving ? "กำลังบันทึก..." : "บันทึกเนื้อหา"}
@@ -192,6 +244,62 @@ export default function AdminEditor({ slug, initialData }) {
             />
           </Field>
         ))}
+      </Section>
+
+      <Section title="เสียง TTS จากชีวประวัติ">
+        <p className="text-sm text-text/70">
+          ใช้กับตัวละครที่ยังไม่มีไฟล์เสียง (.wav) — แอดมินกดสร้างครั้งเดียว
+          นักเรียนจะได้กดฟังอย่างเดียว
+        </p>
+        <div
+          className={`rounded-2xl px-4 py-3 text-sm ${
+            ttsReady
+              ? "bg-emerald-50 text-emerald-800"
+              : "bg-amber-50 text-amber-900"
+          }`}
+        >
+          {ttsReady
+            ? "เสียงตรงกับชีวประวัติปัจจุบันแล้ว"
+            : data.audio?.tts?.url
+              ? "ชีวประวัติเปลี่ยนแล้ว — ควรสร้างเสียงใหม่"
+              : "ยังไม่มีไฟล์เสียง TTS"}
+        </div>
+        {data.audio?.tts?.url ? (
+          <div className="space-y-2 text-xs text-text/55">
+            <p>เสียง: {data.audio.tts.voiceLabel || "Premwadee"}</p>
+            <p>
+              สร้างเมื่อ:{" "}
+              {data.audio.tts.generatedAt
+                ? new Date(data.audio.tts.generatedAt).toLocaleString("th-TH")
+                : "-"}
+            </p>
+            <a
+              href={data.audio.tts.url}
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium text-accent underline"
+            >
+              เปิดไฟล์เสียง
+            </a>
+            {ttsReady ? (
+              <audio controls className="mt-2 w-full" src={data.audio.tts.url}>
+                <track kind="captions" />
+              </audio>
+            ) : null}
+          </div>
+        ) : null}
+        <button
+          type="button"
+          onClick={handleGenerateTts}
+          disabled={generatingTts || saving}
+          className="rounded-2xl bg-gradient-to-r from-accent to-emerald-500 px-5 py-3 text-sm font-bold text-white shadow-soft disabled:opacity-60"
+        >
+          {generatingTts
+            ? "กำลังสร้างเสียง... (อาจใช้เวลา 10–30 วินาที)"
+            : ttsReady
+              ? "สร้างเสียงอีกครั้ง"
+              : "สร้างเสียงจากชีวประวัติ"}
+        </button>
       </Section>
 
       <Section title="เหตุการณ์สำคัญ">
@@ -392,7 +500,7 @@ export default function AdminEditor({ slug, initialData }) {
 
       <button
         type="submit"
-        disabled={saving}
+        disabled={saving || generatingTts}
         className="w-full rounded-2xl bg-gradient-to-r from-primary to-amber-500 px-5 py-3 text-base font-bold text-white shadow-soft disabled:opacity-60"
       >
         {saving ? "กำลังบันทึก..." : "บันทึกเนื้อหา"}

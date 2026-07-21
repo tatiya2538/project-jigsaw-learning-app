@@ -1,5 +1,7 @@
 import { Sarabun } from "next/font/google";
 
+import { SITE_NAME } from "../lib/config";
+
 import "./globals.css";
 
 const sarabun = Sarabun({
@@ -10,9 +12,9 @@ const sarabun = Sarabun({
 });
 
 export const metadata = {
-  title: "Buddhist Learning Card | Jigsaw Learning",
+  title: SITE_NAME,
   description:
-    "สื่อการเรียนรู้แบบ Jigsaw Learning สำหรับนักเรียนมัธยมต้น เรียนรู้บุคคลสำคัญทางพระพุทธศาสนาภายใน 2–3 นาที",
+    `${SITE_NAME} สำหรับนักเรียนมัธยมต้น เรียนรู้บุคคลสำคัญทางพระพุทธศาสนาภายใน 2–3 นาที`,
 };
 
 export default function RootLayout({ children }) {
