@@ -24,7 +24,7 @@ export default async function HomePage() {
           href="/game"
           className="mt-5 inline-flex rounded-2xl bg-gradient-to-r from-primary to-amber-500 px-5 py-3 text-sm font-bold text-white shadow-soft transition hover:scale-[1.02]"
         >
-          🎮 เล่นเกมทาย &quot;ฉันคือใคร?&quot;
+          🎮 เกมห้องเรียน &quot;ฉันคือใคร?&quot;
         </Link>
       </div>
 

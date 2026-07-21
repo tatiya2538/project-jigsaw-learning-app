@@ -2,27 +2,46 @@
 
 import { motion } from "framer-motion";
 
-export default function GameHeader({ questionNumber, totalQuestions }) {
+import { KEYBOARD_HINTS } from "../../data/gameData";
+
+export default function GameHeader({ title, totalScore }) {
   return (
-    <header className="text-center">
-      <motion.h1
-        initial={{ opacity: 0, y: -12 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-2xl font-bold leading-snug text-text sm:text-3xl md:text-4xl"
+    <header className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div>
+        <motion.h1
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-2xl font-bold text-text sm:text-3xl lg:text-4xl"
+        >
+          {title}
+        </motion.h1>
+        <p className="mt-1 text-sm text-text/65">
+          Classroom Game Show · โหมดครูพาเล่น
+        </p>
+      </div>
+
+      <motion.div
+        key={totalScore}
+        initial={{ scale: 1.08, opacity: 0.7 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="rounded-2xl bg-amber-100 px-5 py-3 text-center shadow-soft"
       >
-        🎮 เกมทาย &quot;ฉันคือใคร?&quot;
-      </motion.h1>
-      <p className="mt-2 text-sm text-text/65 sm:text-base">
-        อ่านคำใบ้จากยากไปง่าย แล้วทายบุคคลสำคัญทางพระพุทธศาสนา
-      </p>
-      <motion.p
-        key={questionNumber}
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="mt-4 inline-flex rounded-full bg-white px-4 py-2 text-sm font-semibold text-primary shadow-soft"
-      >
-        คำถามที่ {questionNumber} / {totalQuestions}
-      </motion.p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
+          คะแนนรวมทุกทีม
+        </p>
+        <p className="text-2xl font-bold text-text sm:text-3xl">⭐ {totalScore}</p>
+      </motion.div>
+
+      <div className="hidden flex-wrap gap-2 xl:flex">
+        {KEYBOARD_HINTS.map((item) => (
+          <span
+            key={item.key}
+            className="rounded-full bg-white px-3 py-1 text-xs text-text/70 shadow-soft"
+          >
+            <kbd className="font-bold text-amber-700">{item.key}</kbd> {item.label}
+          </span>
+        ))}
+      </div>
     </header>
   );
 }
