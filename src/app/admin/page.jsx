@@ -1,16 +1,16 @@
 import AdminDashboard from "../../components/admin/AdminDashboard";
 
-import { characters } from "../../data/characters";
+import { listCharacterEntries } from "../../lib/catalog";
+import { SITE_NAME } from "../../lib/config";
+
+export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Admin | Buddhist Learning Card",
+  title: `Admin | ${SITE_NAME}`,
 };
 
-export default function AdminPage() {
-  const list = Object.values(characters).map((character) => ({
-    slug: character.slug,
-    label: character.label,
-  }));
+export default async function AdminPage() {
+  const list = await listCharacterEntries();
 
   return (
     <main className="min-h-screen">
