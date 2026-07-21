@@ -1,17 +1,13 @@
-import WhoAmIGame from "../../components/game/WhoAmIGame";
+import ClassroomGame from "../../components/game/ClassroomGame";
 
 import { SITE_NAME } from "../../lib/config";
 
 export const metadata = {
-  title: `เกมฉันคือใคร? | ${SITE_NAME}`,
+  title: `เกมฉันคือใคร? (Classroom) | ${SITE_NAME}`,
   description:
-    "มินิเกมทายบุคคลสำคัญทางพระพุทธศาสนา จากคำใบ้ยากไปง่าย สำหรับนักเรียนมัธยมต้น",
+    "โหมดเกมห้องเรียนสำหรับครูพาเล่นบนโปรเจกเตอร์ ทายบุคคลสำคัญทางพระพุทธศาสนา",
 };
 
 export default function GamePage() {
-  return (
-    <main className="min-h-screen pb-10">
-      <WhoAmIGame />
-    </main>
-  );
+  return <ClassroomGame />;
 }

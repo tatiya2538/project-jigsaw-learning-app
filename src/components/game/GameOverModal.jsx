@@ -2,47 +2,54 @@
 
 import { motion } from "framer-motion";
 
-import { getRank } from "../../data/gameData";
+import { getMedal } from "../../data/gameData";
 
-export default function GameOverModal({ open, totalScore, maxScore, onRestart }) {
+export default function GameOverModal({ open, rankedTeams, onRestart }) {
   if (!open) return null;
 
-  const rank = getRank(totalScore);
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
       <motion.div
         initial={{ opacity: 0, scale: 0.92 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-md rounded-[2rem] bg-white p-6 text-center shadow-card sm:p-8"
+        className="w-full max-w-2xl rounded-[2rem] border border-amber-200 bg-white p-6 text-text shadow-card sm:p-8"
       >
-        <p className="text-sm font-semibold text-primary">จบเกมแล้ว</p>
-        <h2 className="mt-2 text-2xl font-bold text-text sm:text-3xl">
-          ยินดีด้วย!
+        <p className="text-center text-sm font-semibold text-amber-700">
+          Game Over
+        </p>
+        <h2 className="mt-2 text-center text-3xl font-bold text-text sm:text-4xl">
+          🏆 อันดับสุดท้าย
         </h2>
-        <p className="mt-2 text-text/70">คุณทายครบทุกบุคคลแล้ว</p>
+        <p className="mt-2 text-center text-text/65">
+          ยินดีด้วยทุกทีม — เกมจบแล้ว
+        </p>
 
-        <motion.div
-          initial={{ scale: 0.85, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.15 }}
-          className={`mx-auto mt-6 rounded-3xl bg-gradient-to-br ${rank.tone} px-5 py-6 shadow-soft`}
-        >
-          <p className="text-sm font-medium text-text/70">คะแนนรวม</p>
-          <p className="mt-1 text-4xl font-bold text-text">
-            {totalScore}
-            <span className="text-lg font-semibold text-text/60">
-              {" "}
-              / {maxScore}
-            </span>
-          </p>
-          <p className="mt-3 text-lg font-bold text-text">{rank.title}</p>
-        </motion.div>
+        <div className="mt-6 space-y-3">
+          {rankedTeams.map((team, index) => (
+            <motion.div
+              key={team.id}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.08 }}
+              className="flex items-center justify-between rounded-2xl border border-secondary/40 bg-background px-4 py-4"
+              style={{ boxShadow: `inset 4px 0 0 ${team.color}` }}
+            >
+              <div>
+                <p className="text-lg font-bold text-text">
+                  {getMedal(index)}{" "}
+                  {index === 0 ? "Champion · " : ""}
+                  {team.name}
+                </p>
+              </div>
+              <p className="text-2xl font-bold text-amber-700">{team.score}</p>
+            </motion.div>
+          ))}
+        </div>
 
         <button
           type="button"
           onClick={onRestart}
-          className="mt-6 w-full rounded-2xl bg-gradient-to-r from-primary to-amber-500 px-4 py-3 text-base font-bold text-white shadow-soft"
+          className="mt-7 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-300 px-5 py-4 text-lg font-bold text-slate-950"
         >
           เล่นใหม่
         </button>

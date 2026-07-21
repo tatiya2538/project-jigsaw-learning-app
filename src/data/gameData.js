@@ -1,190 +1,103 @@
 import { BLOB_BASE } from "../lib/config";
 
+import gameCharacterSeed from "./gameCharacters.json";
+
 function imageOf(slug) {
   return `${BLOB_BASE}/charactor/${slug}.webp`;
 }
 
 /**
- * Mini Game "ฉันคือใคร?"
+ * Classroom Game "ฉันคือใคร?"
  * clues[0] = hardest … clues[9] = easiest
- * Correct guess after clue N (1–10) earns (11 - N) points.
+ * Correct after clue N (1–10) earns (11 - N) points.
  */
-export const gameCharacters = [
-  {
-    slug: "kondanna",
-    name: "พระอัญญาโกณฑัญญะ",
-    image: imageOf("kondanna"),
-    shortBio:
-      "พราหมณ์ผู้ติดตามพระพุทธเจ้า และเป็นผู้เข้าใจธรรมจากการฟังปฐมเทศนาเป็นคนแรก จึงได้เป็นพระสงฆ์องค์แรกของพระพุทธศาสนา",
-    virtues: ["ใฝ่รู้", "ตั้งใจฟัง", "เข้าใจแล้วเล่าต่อ"],
-    clues: [
-      "ฉันเคยฝึกคิดและตั้งคำถามมาตั้งแต่ยังเยาว์ ในตระกูลที่ให้ความสำคัญกับความรู้",
-      "ฉันเป็นหนึ่งในกลุ่มเพื่อนที่ติดตามการแสวงหาทางพ้นทุกข์ไปด้วยกัน",
-      "ฉันเคยผิดหวังเมื่อเห็นเพื่อนหันไปใช้ทางสายกลาง แต่ยังไม่ทิ้งมิตรภาพ",
-      "สถานที่สำคัญในชีวิตฉันเกี่ยวข้องกับป่าอิสิปตนะแห่งมฤคทายวัน",
-      "ฉันเข้าใจความจริงจากการฟังเทศนาเรื่องอริยสัจจ์",
-      "ฉันได้ชื่อเพิ่มเติมที่แปลว่า “ผู้รู้แจ้ง”",
-      "ฉันชอบอธิบายธรรมด้วยเหตุผล เพื่อให้เพื่อนเข้าใจไปด้วยกัน",
-      "ฉันเป็นคนแรกในกลุ่มที่เข้าใจธรรมในวันปฐมเทศนา",
-      "ฉันคือพระสงฆ์องค์แรกของพระพุทธศาสนา",
-      "ฉันคือพระอัญญาโกณฑัญญะ ผู้เข้าใจธรรมเป็นคนแรก",
-    ],
-  },
-  {
-    slug: "gotami",
-    name: "พระนางมหาประชาบดีโคตมีเถรี",
-    image: imageOf("gotami"),
-    shortBio:
-      "พระมาตุจฉาของเจ้าชายสิทธัตถะ ผู้เลี้ยงดูพระองค์ด้วยความเมตตา และเป็นผู้นำการขออนุญาตให้สตรีอุปสมบท จนกลายเป็นพระภิกษุณีองค์แรก",
-    virtues: ["เมตตา", "อดทน", "กล้าขอโอกาสอย่างสุภาพ"],
-    clues: [
-      "ฉันเคยดูแลเด็กคนหนึ่งด้วยความรัก แม้เขาจะไม่ใช่ลูกแท้ ๆ ของฉัน",
-      "ฉันเติบโตในราชตระกูล และเคยมีบทบาทสำคัญในครอบครัวของกษัตริย์ศากยะ",
-      "ฉันเคยต้องเผชิญกับการปฏิเสธครั้งแล้วครั้งเล่า แต่ยังไม่ยอมแพ้",
-      "ฉันนำกลุ่มสตรีเดินทางไกลเพื่อขอโอกาสในการปฏิบัติธรรม",
-      "ฉันมีความสัมพันธ์ใกล้ชิดกับเจ้าชายสิทธัตถะในฐานะผู้เลี้ยงดู",
-      "ฉันเป็นผู้ผลักดันให้สตรีได้มีสิทธิอุปสมบทในพระพุทธศาสนา",
-      "ฉันขอร้องด้วยความสุภาพและอดทน จนได้รับการอนุญาตในที่สุด",
-      "ฉันคือพระภิกษุณีองค์แรกของพระพุทธศาสนา",
-      "ฉันคือพระมาตุจฉาของพระพุทธเจ้า",
-      "ฉันคือพระนางมหาประชาบดีโคตมีเถรี",
-    ],
-  },
-  {
-    slug: "khema",
-    name: "พระนางเขมาเถรี",
-    image: imageOf("khema"),
-    shortBio:
-      "อดีตพระราชเทวีที่เคยยึดติดความงาม แล้วหันมาพัฒนาปัญญาจนได้รับการยกย่องว่าเป็นผู้เลิศทางปัญญาในหมู่ภิกษุณี",
-    virtues: ["ปล่อยวาง", "ใช้เหตุผล", "กล้าเปลี่ยนแปลงตนเอง"],
-    clues: [
-      "ฉันเคยหลีกเลี่ยงสิ่งที่ทำให้ต้องเผชิญความจริงเกี่ยวกับความไม่เที่ยง",
-      "ฉันเคยผูกใจกับสิ่งภายนอกมาก จนกลัวการฟังธรรมบางเรื่อง",
-      "วันหนึ่งฉันได้เห็นภาพความงามที่ค่อย ๆ เปลี่ยนไปต่อหน้า",
-      "ฉันเคยมีตำแหน่งสูงในราชสำนักก่อนจะหันมาฝึกฝนทางธรรม",
-      "ฉันเคยเป็นพระราชเทวีของพระเจ้าพิมพิสาร",
-      "จุดเปลี่ยนของฉันคือการเข้าใจว่าความงามภายนอกอยู่ได้ไม่นาน",
-      "หลังปล่อยวาง ฉันอุปสมบทและฝึกคิดอย่างมีเหตุผล",
-      "ฉันได้รับการยกย่องว่าเลิศทางปัญญาในหมู่ภิกษุณี",
-      "ฉันเคยยึดติดความงาม แล้วเปลี่ยนมาพัฒนาปัญญา",
-      "ฉันคือพระนางเขมาเถรี ผู้เลิศทางปัญญา",
-    ],
-  },
-  {
-    slug: "pasenadi",
-    name: "พระเจ้าปเสนทิโกศล",
-    image: imageOf("pasenadi"),
-    shortBio:
-      "กษัตริย์แคว้นโกศลผู้ใฝ่ธรรม รู้จักฟังคำแนะนำ และปกครองบ้านเมืองด้วยความยุติธรรมมากกว่าอารมณ์ชั่ววูบ",
-    virtues: ["ยุติธรรม", "รับฟัง", "ใฝ่ธรรม"],
-    clues: [
-      "ฉันเคยตัดสินใจจากอารมณ์ แล้วค่อยเรียนรู้ว่าควรฟังให้รอบคอบกว่านั้น",
-      "ฉันปกครองดินแดนที่มีเมืองสำคัญชื่อสาวัตถี",
-      "ฉันมักไปปรึกษาและสนทนาธรรมกับพระพุทธเจ้าบ่อยครั้ง",
-      "ฉันเรียนรู้ว่าอำนาจยิ่งใหญ่ต้องคู่กับความรับผิดชอบ",
-      "ฉันเป็นกษัตริย์ร่วมสมัยพระพุทธเจ้า",
-      "ฉันปกครองแคว้นโกศล",
-      "ฉันพยายามใช้ธรรมเป็นหลักในการปกครองมากกว่าใช้โทสะ",
-      "ฉันคือตัวอย่างของผู้นำที่รับฟังและแก้ไขตนเองได้",
-      "ฉันคือพระราชาผู้ปกครองด้วยธรรม",
-      "ฉันคือพระเจ้าปเสนทิโกศล",
-    ],
-  },
-  {
-    slug: "poonpismai",
-    name: "หม่อมเจ้าหญิงพูนพิศมัย ดิศกุล",
-    image: imageOf("poonpismai"),
-    shortBio:
-      "พระราชธิดาในสมเด็จพระเจ้าบรมวงศ์เธอ กรมพระยาดำรงราชานุภาพ นักปราชญ์ผู้ศึกษาและเผยแพร่ความรู้พระพุทธศาสนาอย่างเป็นระบบ",
-    virtues: ["ใฝ่ศึกษา", "เผยแพร่ความรู้", "รักษาภูมิปัญญา"],
-    clues: [
-      "ฉันเติบโตในครอบครัวที่ให้ความสำคัญกับการศึกษาประวัติศาสตร์และวัฒนธรรม",
-      "ฉันใช้ชีวิตในยุคที่บ้านเมืองกำลังเปลี่ยนแปลงสู่สมัยใหม่",
-      "ฉันสนใจทั้งความรู้ทางโลกและหลักธรรมทางพระพุทธศาสนา",
-      "ฉันช่วยถ่ายทอดความรู้ให้คนรุ่นหลังเข้าใจพุทธศาสนาได้ง่ายขึ้น",
-      "ฉันมีบรรดาศักดิ์ระดับหม่อมเจ้า",
-      "บิดาของฉันเป็นนักปราชญ์สำคัญด้านประวัติศาสตร์ไทย",
-      "ฉันเป็นพระราชธิดาในกรมพระยาดำรงราชานุภาพ",
-      "ฉันคือนักปราชญ์หญิงผู้เผยแพร่ความรู้พุทธศาสนา",
-      "ฉันคือหม่อมเจ้าหญิงที่มีผลงานด้านการศึกษาธรรม",
-      "ฉันคือหม่อมเจ้าหญิงพูนพิศมัย ดิศกุล",
-    ],
-  },
-  {
-    slug: "sanya",
-    name: "ศาสตราจารย์สัญญา ธรรมศักดิ์",
-    image: imageOf("sanya"),
-    shortBio:
-      "นักกฎหมายและอดีตนายกรัฐมนตรี ผู้ยึดมั่นในคุณธรรม ความซื่อสัตย์ และการใช้กฎหมายอย่างเป็นธรรมเพื่อประโยชน์ส่วนรวม",
-    virtues: ["ซื่อสัตย์", "ยุติธรรม", "รับผิดชอบต่อส่วนรวม"],
-    clues: [
-      "ฉันเชื่อว่าความรู้ต้องเดินคู่กับคุณธรรม จึงจะเป็นประโยชน์แก่สังคม",
-      "ฉันเคยทำงานในระบบยุติธรรมและวงการกฎหมายของประเทศ",
-      "ฉันเคยมีบทบาทสำคัญในช่วงเวลาที่บ้านเมืองต้องการความสงบและหลักการ",
-      "ฉันได้รับยกย่องในฐานะผู้ใหญ่ที่น่าเชื่อถือและมีหลักยึด",
-      "ฉันเคยดำรงตำแหน่งสูงสุดในฝ่ายบริหารของประเทศ",
-      "ฉันเป็นทั้งนักกฎหมายและผู้นำทางการเมือง",
-      "ฉันเคยเป็นนายกรัฐมนตรีของประเทศไทย",
-      "ฉันคือศาสตราจารย์ด้านกฎหมายที่ยึดมั่นในธรรม",
-      "ฉันคืออดีตนายกรัฐมนตรีผู้มีคุณธรรมเป็นที่กล่าวถึง",
-      "ฉันคือศาสตราจารย์สัญญา ธรรมศักดิ์",
-    ],
-  },
+export const gameCharacters = gameCharacterSeed.map((character) => ({
+  ...character,
+  image: imageOf(character.slug),
+}));
+
+export const CLUES_PER_CHARACTER = 10;
+export const TURN_SECONDS = 5;
+export const QUESTION_COUNT_OPTIONS = [10, 15, 20];
+export const STORAGE_KEY = "classroom-whoami-game-v1";
+
+export const TEAM_PRESETS = [
+  { emoji: "🔵", name: "ทีมพุทธ", color: "#38bdf8" },
+  { emoji: "🟢", name: "ทีมธรรม", color: "#34d399" },
+  { emoji: "🟡", name: "ทีมปัญญา", color: "#fbbf24" },
+  { emoji: "🔴", name: "ทีมเมตตา", color: "#f87171" },
+  { emoji: "🟣", name: "ทีมสมาธิ", color: "#c084fc" },
 ];
 
-export const TOTAL_QUESTIONS = gameCharacters.length;
-export const CLUES_PER_CHARACTER = 10;
+export const KEYBOARD_HINTS = [
+  { key: "Space", label: "เริ่ม/หยุดจับเวลา" },
+  { key: "N", label: "คำใบ้ถัดไป + สลับทีม" },
+  { key: "Enter", label: "ตอบถูก" },
+  { key: "Backspace", label: "ตอบผิด" },
+  { key: "→", label: "ทีมถัดไป" },
+  { key: "↓", label: "ข้อถัดไป" },
+];
 
 export function getPointsForClue(clueNumber) {
-  // clueNumber is 1–10
   return Math.max(1, 11 - clueNumber);
 }
 
-export function getRank(totalScore) {
-  const maxScore = TOTAL_QUESTIONS * 10;
-
-  if (totalScore >= Math.round(maxScore * 0.9)) {
-    return {
-      title: "🥇 ผู้เชี่ยวชาญพระพุทธศาสนา",
-      tone: "from-amber-400 to-yellow-300",
-    };
-  }
-
-  if (totalScore >= Math.round(maxScore * 0.7)) {
-    return {
-      title: "🥈 นักเรียนดีเด่น",
-      tone: "from-slate-300 to-slate-100",
-    };
-  }
-
-  if (totalScore >= Math.round(maxScore * 0.5)) {
-    return {
-      title: "🥉 นักเรียนฝึกหัด",
-      tone: "from-orange-300 to-amber-200",
-    };
-  }
-
-  return {
-    title: "🌱 ลองอีกครั้ง",
-    tone: "from-emerald-300 to-teal-200",
-  };
-}
-
-export function shuffleCharacters(list = gameCharacters) {
+export function shuffleList(list) {
   const next = [...list];
-
   for (let i = next.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
     [next[i], next[j]] = [next[j], next[i]];
   }
-
   return next;
 }
 
-export function createAnswerOptions(allCharacters = gameCharacters) {
-  return allCharacters.map((item) => ({
-    slug: item.slug,
-    name: item.name,
-    image: item.image,
-  }));
+/** Build N questions from 6 characters without consecutive repeats. */
+export function buildQuestionQueue(count, pool = gameCharacters) {
+  const queue = [];
+  let bag = shuffleList(pool);
+
+  while (queue.length < count) {
+    if (!bag.length) {
+      bag = shuffleList(pool);
+    }
+
+    let next = bag.shift();
+    if (queue.length && next.slug === queue[queue.length - 1].slug && bag.length) {
+      const swapIndex = bag.findIndex((item) => item.slug !== next.slug);
+      if (swapIndex >= 0) {
+        const temp = bag[swapIndex];
+        bag[swapIndex] = next;
+        next = temp;
+      }
+    }
+
+    queue.push(next);
+  }
+
+  return queue;
+}
+
+export function createTeams(teamCount, customNames = []) {
+  return Array.from({ length: teamCount }, (_, index) => {
+    const preset = TEAM_PRESETS[index] || TEAM_PRESETS[0];
+    return {
+      id: `team-${index + 1}`,
+      name: customNames[index]?.trim() || `${preset.emoji} ${preset.name}`,
+      color: preset.color,
+      score: 0,
+    };
+  });
+}
+
+export function rotateOrder(teamIds, startIndex) {
+  const order = [...teamIds];
+  const start = ((startIndex % order.length) + order.length) % order.length;
+  return [...order.slice(start), ...order.slice(0, start)];
+}
+
+export function getMedal(rankIndex) {
+  if (rankIndex === 0) return "🥇";
+  if (rankIndex === 1) return "🥈";
+  if (rankIndex === 2) return "🥉";
+  return `${rankIndex + 1}️⃣`;
 }
