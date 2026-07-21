@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-export default function AdminDashboard({ characters }) {
+import { buildDefaultGameEntries } from "../../data/games";
+
+export default function AdminDashboard({ characters, games = [] }) {
   const router = useRouter();
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -18,6 +20,14 @@ export default function AdminDashboard({ characters }) {
   const [newImage, setNewImage] = useState("");
 
   const [togglingSlug, setTogglingSlug] = useState("");
+  const [togglingGameId, setTogglingGameId] = useState("");
+  const [gameList, setGameList] = useState(() =>
+    games?.length ? games : buildDefaultGameEntries(),
+  );
+
+  useEffect(() => {
+    setGameList(games?.length ? games : buildDefaultGameEntries());
+  }, [games]);
 
   async function handleLogout() {
     await fetch("/api/admin/logout", { method: "POST" });
@@ -129,13 +139,52 @@ export default function AdminDashboard({ characters }) {
     }
   }
 
+  async function handleToggleGameActive(id, nextActive) {
+    setTogglingGameId(id);
+    setMessage("");
+    setError("");
+
+    try {
+      const response = await fetch(`/api/admin/games/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active: nextActive }),
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        setError(data.error || "อัปเดตสถานะเกมไม่สำเร็จ");
+        return;
+      }
+
+      setGameList((prev) =>
+        prev.map((game) =>
+          game.id === id
+            ? { ...game, ...(data.entry || {}), active: nextActive }
+            : game,
+        ),
+      );
+
+      setMessage(
+        nextActive
+          ? `เปิดเกม “${data.entry?.label || id}” แล้ว — แสดงในหน้าแรก`
+          : `ปิดเกม “${data.entry?.label || id}” แล้ว — ซ่อนจากหน้านักเรียน`,
+      );
+      router.refresh();
+    } catch {
+      setError("เกิดข้อผิดพลาดขณะอัปเดตสถานะเกม");
+    } finally {
+      setTogglingGameId("");
+    }
+  }
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-text">Admin</h1>
           <p className="mt-2 text-text/70">
-            เลือกบัตรเพื่อแก้ไข หรือเพิ่มบุคคลใหม่ได้จากด้านล่าง
+            เปิด/ปิดเกมด้านล่างนี้ · เลือกบัตรเพื่อแก้ไข หรือเพิ่มบุคคลใหม่ได้ต่อ
           </p>
           <p className="mt-2 text-xs text-text/50">
             แก้เสร็จกด “บันทึก” ในหน้ารายละเอียดเท่านั้น — ไม่ต้องรีเซ็ตทุกครั้ง
@@ -180,6 +229,72 @@ export default function AdminDashboard({ characters }) {
           {error}
         </p>
       ) : null}
+
+      <div className="mt-8 space-y-3">
+        <h2 className="text-lg font-bold text-text">
+          เปิด / ปิดเกม ({gameList.length})
+        </h2>
+        <p className="text-sm text-text/60">
+          กดปุ่มเพื่อซ่อนหรือแสดงเกมในหน้าแรกของนักเรียน
+        </p>
+        {gameList.map((game) => {
+          const isActive = game.active !== false;
+
+          return (
+            <div
+              key={game.id}
+              className={`rounded-3xl bg-white p-5 shadow-card ${
+                isActive ? "" : "opacity-80"
+              }`}
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-bold text-text">
+                      {game.emoji} {game.label}
+                    </p>
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                        isActive
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      {isActive ? "เปิดอยู่" : "ปิดอยู่"}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm text-text/60">{game.href}</p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleToggleGameActive(game.id, !isActive)}
+                    disabled={togglingGameId === game.id}
+                    className={`rounded-2xl px-4 py-2 text-sm font-semibold disabled:opacity-60 ${
+                      isActive
+                        ? "border border-orange-200 bg-orange-50 text-orange-700"
+                        : "border border-emerald-200 bg-emerald-50 text-emerald-700"
+                    }`}
+                  >
+                    {togglingGameId === game.id
+                      ? "กำลังบันทึก..."
+                      : isActive
+                        ? "ปิดเกม"
+                        : "เปิดเกม"}
+                  </button>
+                  <Link
+                    href={game.href}
+                    className="rounded-2xl bg-background px-4 py-2 text-sm font-semibold text-sky-700"
+                  >
+                    เปิดดู →
+                  </Link>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
 
       <form
         onSubmit={handleCreate}

@@ -3,13 +3,17 @@ import Link from "next/link";
 
 import Footer from "../components/Footer";
 
+import { listGameEntries } from "../lib/catalog";
 import { SITE_NAME } from "../lib/config";
 import { listCharactersForUi } from "../lib/content";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const characterList = await listCharactersForUi();
+  const [characterList, games] = await Promise.all([
+    listCharactersForUi(),
+    listGameEntries({ activeOnly: true }),
+  ]);
 
   return (
     <main className="min-h-screen px-4 py-10 sm:px-6 sm:py-14">
@@ -20,12 +24,19 @@ export default async function HomePage() {
         <p className="mt-3 text-base leading-relaxed text-text/75 sm:text-lg">
           เลือกบุคคลสำคัญเพื่อเรียนรู้ภายใน 2–3 นาที ก่อนไปอธิบายให้เพื่อนฟัง
         </p>
-        <Link
-          href="/game"
-          className="mt-5 inline-flex rounded-2xl bg-gradient-to-r from-primary to-amber-500 px-5 py-3 text-sm font-bold text-white shadow-soft transition hover:scale-[1.02]"
-        >
-          🎮 เกมห้องเรียน &quot;ฉันคือใคร?&quot;
-        </Link>
+        {games.length ? (
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+            {games.map((game) => (
+              <Link
+                key={game.id}
+                href={game.href}
+                className={`inline-flex rounded-2xl bg-gradient-to-r ${game.tone} px-5 py-3 text-sm font-bold text-white shadow-soft transition hover:scale-[1.02]`}
+              >
+                {game.emoji} {game.label}
+              </Link>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       <div className="mx-auto mt-10 grid max-w-3xl grid-cols-1 gap-4 sm:grid-cols-2">
